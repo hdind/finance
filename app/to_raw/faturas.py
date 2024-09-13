@@ -5,7 +5,7 @@ import pandas as pd
 import hashlib
 import sys
 import sqlite3
-
+import os
 
 def _generate_md5(*args) -> str:
 	concat = ''.join(args)
@@ -14,6 +14,7 @@ def _generate_md5(*args) -> str:
 def main():
 	if len(sys.argv) != 2:
 		print('Faltou o parâmeto de file_path!')
+		return 1
 	else:
 		file_path = sys.argv[1]
 
