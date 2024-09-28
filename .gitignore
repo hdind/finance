@@ -164,7 +164,7 @@ src/
 databases/
 
 # configure variables
-config/
+config/.*
 
 # testing
 test*
