@@ -1,5 +1,6 @@
 from configs.config import PSQL_CONN
 from sqlalchemy import create_engine
+import pandas as pd
 import psycopg2
 
 
@@ -11,55 +12,39 @@ class PostgreSQL:
         self.user = PSQL_CONN["psql_username"]
         self.password = PSQL_CONN["psql_password"]
 
-    def __connect(self):
-        try:
-            conn = psycopg2.connect(
-                host=self.host,
-                port=self.port,
-                database=self.database,
-                user=self.user,
-                password=self.password
-            )
-        except Exception as error:
-            print(f"Erro ao conectar ao banco de dados: {error}")
+        self.psycopg2_conn = psycopg2.connect(
+            host=self.host,
+            port=self.port,
+            database=self.database,
+            user=self.user,
+            password=self.password
+        )
 
-        return conn
-
-    def query(self, query):
-        conn = self.__connect()
-        cursor = conn.cursor()
-
-        cursor.execute(query)
-        result = cursor.fetchone()
-
-        cursor.close()
-        conn.close()
-
-        return result
-
-    def create_table(self, query):
-        conn = self.__connect()
-        cursor = conn.cursor()
-
-        cursor.execute(query)
-
-        conn.commit()
-        print('Tabela criada com sucesso!')
-
-    def insert_from_pandas(self, schema, table_name, df):
-        engine = create_engine(
+        self.sqlalchemy_conn = create_engine(
             f"postgresql+psycopg2://{self.user}:{self.password}@{self.host}:"
             f"{self.port}/{self.database}"
         )
-        try:
-            df.to_sql(
-                f"{table_name}",
-                con=engine,
-                if_exists="append",
-                index=False,
-                schema='raw'   
-            )
-            print(f"+{len(df)} linhas inseridas na {schema}.{table_name}")
 
-        except Exception as e:
-            raise print(f"Ocorreu um erro: {e}")
+    def query(self, query):
+        return pd.read_sql(query, self.sqlalchemy_conn)
+
+    def create_table(self, query):
+        cursor = self.psycopg2_conn.cursor()
+
+        cursor.execute(query)
+
+        self.psycopg2_conn.commit()
+
+        cursor.close()
+        self.psycopg2_conn.close()
+        print('Tabela criada com sucesso!')
+
+    def insert_from_pandas(self, schema, table_name, df):
+        df.to_sql(
+            f"{table_name}",
+            con=self.sqlalchemy_conn,
+            if_exists="append",
+            index=False,
+            schema=schema
+        )
+        print(f"+{len(df)} linhas inseridas na {schema}.{table_name}")

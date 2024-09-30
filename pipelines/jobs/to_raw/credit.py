@@ -25,7 +25,7 @@ def etl():
 
     psql = PostgreSQL()
 
-    query = """
+    psql.create_table("""
         CREATE TABLE IF NOT EXISTS raw.c6_credit (
             id TEXT PRIMARY KEY,
             id_parcel TEXT,
@@ -43,8 +43,7 @@ def etl():
             source TEXT,
             file_name TEXT
         );
-    """
-    psql.create_table(query)
+    """)
 
     psql.insert_from_pandas(
         schema="raw",
