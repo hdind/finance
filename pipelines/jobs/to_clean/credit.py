@@ -8,7 +8,7 @@ def standardization(df):
 
     df_clean['id'] = df['id']
     df_clean['id_parcel'] = df['id_parcel']
-    df_clean['id_payment'] = df['id_payment']
+    df_clean['id_classification'] = df['id_classification']
     df_clean["dt_compra"] = pd.to_datetime(df["Data de Compra"], format="%d/%m/%Y")
     df_clean["dt_competencia"] = pd.to_datetime(df['Data de Compra'], format='%d/%m/%Y').dt.to_period('M').dt.to_timestamp()
     df_clean['nm_cartao'] = df['Nome no Cartão']
@@ -37,10 +37,11 @@ def etl():
     print(df_clean.info())
 
     psql.create_table("""
+        -- DROP TABLE clean.c6_credit;
         CREATE TABLE IF NOT EXISTS clean.c6_credit (
             id TEXT PRIMARY KEY,
             id_parcel TEXT,
-            id_payment TEXT,
+            id_classification TEXT,
             dt_compra DATE,
             dt_competencia DATE,
             nm_cartao TEXT,

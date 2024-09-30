@@ -20,7 +20,7 @@ def add_metadata(df, path, now):
             row['Descrição'],
             row['Valor (em R$)']
         ), axis=1)
-    df['id_payment'] = df.apply(lambda row: _generate_foreign_id(
+    df['id_classification'] = df.apply(lambda row: _generate_foreign_id(
             row['Categoria'],
             row['Descrição'],
         ), axis=1)

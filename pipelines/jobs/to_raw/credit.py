@@ -26,10 +26,11 @@ def etl():
     psql = PostgreSQL()
 
     psql.create_table("""
+        -- DROP TABLE raw.c6_credit;
         CREATE TABLE IF NOT EXISTS raw.c6_credit (
             id TEXT PRIMARY KEY,
             id_parcel TEXT,
-            id_payment TEXT,
+            id_classification TEXT,
             "Data de Compra" TEXT,
             "Nome no Cartão" TEXT,
             "Final do Cartão" TEXT,
