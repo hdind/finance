@@ -13,7 +13,7 @@ PROMPT_TEMPLATE = """
     Todos são transações financeiras de uma pessoas física de uma fatura de cartão de crédito.
 
     E escolha uma categoria (entre parênteses, dei alguns exemplos):
-    - Pagamento (pagamento da fatura do cartão)
+    - Fatura (pagamento da fatura do cartão)
     - Saúde (médico, exames, farmácias)
     - Alimentação (supermercados, comida, hortifrutis)
     - Educação (livros, faculdade, cursos)
@@ -21,6 +21,7 @@ PROMPT_TEMPLATE = """
     - Transporte (uber, combustível, mecânico)
     - Telefone (recarga de crédito no telefone)
     - Pets (ração, veterinário, petshop)
+    - Moradia
 
     Escolha a categoria, baseado na seguinte descrição:
     {text}
@@ -29,8 +30,25 @@ PROMPT_TEMPLATE = """
 """
 
 
+def clean_response_content(content):
+    categories = [
+        'Pagamento',
+        'Saúde',
+        'Alimentação',
+        'Educação',
+        'Compras',
+        'Transporte',
+        'Telefone',
+        'Pets',
+        'Moradia'
+    ]
+
+    content = content.replace('(', '').replace(')', '').split(' ')[0]
+    return None if content not in categories else content
+
+
 def classificate(row, now, psql):
-    concat_string = ' - '.join(row['categoria_cartao'], row['descricao'])
+    concat_string = ' - '.join([row['categoria_cartao'], row['descricao']])
 
     prompt = PromptTemplate.from_template(template=PROMPT_TEMPLATE)
 
@@ -38,24 +56,30 @@ def classificate(row, now, psql):
     chain = prompt | chat
 
     response = chain.invoke(concat_string)
-    print(f'{concat_string} categorizado como: {response.content}')
+    content = clean_response_content(response.content)
 
-    df_classification = {
-        'id': 'id_example',
-        'categoria_cartao': row['categoria_cartao'],
-        'descricao': row['descricao'],
-        'categoria_ai': response.content,
-        'usage_metadata': response.usage_metadata,
-        'model_name': response.response_metadata['model_name'],
-        'time': now
-    }
+    if content:
+        print(f'{concat_string} categorizado como: {response.content}')
 
-    psql.insert_from_pandas(
-        schema='clean',
-        table_name='classification',
-        df=df_classification
-    )
-    print(f'+{len(df_classification)} linha inserida em clean.classification')
+        df_classification = pd.DataFrame([{
+            'id': row['id'],
+            'categoria_cartao': row['categoria_cartao'],
+            'descricao': row['descricao'],
+            'categoria_ai': content,
+            'input_tokens': response.usage_metadata['input_tokens'],
+            'output_tokens': response.usage_metadata['output_tokens'],
+            'total_tokens': response.usage_metadata['total_tokens'],
+            'model_name': response.response_metadata['model_name'],
+            'time': now
+        }])
+
+        psql.insert_from_pandas(
+            schema='clean',
+            table_name='classification',
+            df=df_classification
+        )
+    else:
+        print(f'{response.content} não foi classificado corretamente')
 
 
 def etl():
@@ -63,22 +87,44 @@ def etl():
     psql = PostgreSQL()
 
     df = psql.query("""
-        SELECT DISTINCT
-            id_classification as id,
-            categoria_cartao,
-            descricao
+        WITH to_classification as (
+            SELECT
+                DISTINCT id_classification,
+                categoria_cartao,
+                descricao
+            FROM
+                clean.c6_credit
+            UNION ALL
+            SELECT
+                DISTINCT id_classification,
+                '' as categoria_cartao,
+                descricao
+            FROM
+                clean.c6_debit
+        )
+        SELECT
+            a.id_classification AS id,
+            a.categoria_cartao,
+            a.descricao
         FROM
-            clean.c6_credit
+            to_classification a
+        LEFT JOIN clean.classification c ON
+            a.id_classification = c.id
+        WHERE
+            c.categoria_ai IS NULL;
         """)
     print(f'{len(df)} transações distintas retornaram da camada clean')
 
     psql.create_table("""
+        --DROP TABLE clean.classification;
         CREATE TABLE IF NOT EXISTS clean.classification (
             id TEXT PRIMARY KEY,
             categoria_cartao TEXT,
             descricao TEXT,
             categoria_ai TEXT,
-            usage_metadata JSONB,
+            input_tokens TEXT,
+            output_tokens TEXT,
+            total_tokens TEXT,
             model_name TEXT,
             time TIMESTAMP
         );
