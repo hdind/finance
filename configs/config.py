@@ -21,3 +21,5 @@ PSQL_CONN = {
     "psql_username": "prd_user" if ENV == "prd" else "dev_user",
     "psql_password": os.getenv("PSQL_PASSWORD")
 }
+
+PDF_PASSWORD = os.getenv('PDF_PASSWORD')
