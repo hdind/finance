@@ -7,7 +7,6 @@ def standardization(df):
     df_clean = pd.DataFrame()
 
     df_clean['id'] = df['id']
-    df_clean['id_classification'] = df['id_classification']
     df_clean["dt_compra"] = pd.to_datetime(df["DATA"], format="%d/%m/%Y")
     df_clean["dt_competencia"] = pd.to_datetime(df['DATA'], format='%d/%m/%Y').dt.to_period('M').dt.to_timestamp()
     df_clean['descricao'] = df['DESCRIÇÃO']
@@ -21,7 +20,7 @@ def standardization(df):
     return df_clean
 
 
-def etl():
+def load_debit_to_clean():
     print("Iniciando o job to clean")
     psql = PostgreSQL()
 
@@ -42,7 +41,6 @@ def etl():
         -- DROP TABLE clean.c6_debit;
         CREATE TABLE IF NOT EXISTS clean.c6_debit (
             id TEXT PRIMARY KEY,
-            id_classification TEXT,
             dt_compra DATE,
             dt_competencia DATE,
             descricao TEXT,
@@ -63,4 +61,4 @@ def etl():
 
 
 if __name__ == "__main__":
-    etl()
+    load_debit_to_clean()

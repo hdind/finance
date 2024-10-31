@@ -1,39 +1,34 @@
 import hashlib
-import uuid
 import os
 
 
-def _generate_primary_id():
-    return str(uuid.uuid4())
-
-
-def _generate_foreign_id(*args):
+def generate_id(*args):
     combined_string = ''.join(args)
     return hashlib.sha256(combined_string.encode()).hexdigest()
 
 
 def add_metadata(df, path, now, statement):
-    df['id'] = df.apply(lambda _: _generate_primary_id(), axis=1)
+    df['id'] = df.apply(lambda row: generate_id(*row.astype(str)), axis=1)
     df['time'] = now
-    df['source'] = 'C6 credit'
+    df['source'] = 'C6'
     df['file_name'] = path.split('/')[-1]
 
-    if statement == 'credit':
-        df['id_parcel'] = df.apply(lambda row: _generate_foreign_id(
-            row['Data de Compra'],
-            row['Categoria'],
-            row['Descrição'],
-            row['Valor (em R$)']
-        ), axis=1)
-        df['id_classification'] = df.apply(lambda row: _generate_foreign_id(
-            row['Categoria'],
-            row['Descrição'],
-        ), axis=1)
+    # if statement == 'credit':
+    #     df['id_parcel'] = df.apply(lambda row: _generate_id(
+    #         row['Data de Compra'],
+    #         row['Categoria'],
+    #         row['Descrição'],
+    #         row['Valor (em R$)']
+    #     ), axis=1)
+    #     df['id_classification'] = df.apply(lambda row: _generate_id(
+    #         row['Categoria'],
+    #         row['Descrição'],
+    #     ), axis=1)
 
-    elif statement == 'debit':
-        df['id_classification'] = df.apply(lambda row: _generate_foreign_id(
-            row['DESCRIÇÃO']
-        ), axis=1)
+    # elif statement == 'debit':
+    #     df['id_classification'] = df.apply(lambda row: _generate_id(
+    #         row['DESCRIÇÃO']
+    #     ), axis=1)
 
     return df
 

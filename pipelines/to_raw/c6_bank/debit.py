@@ -40,7 +40,7 @@ def struct_pdf(pdf_unlocked_path):
     return df
 
 
-def etl():
+def load_debit_to_raw():
     print("Iniciando o job to raw")
     file_manager = FileManager(ROOT, 'debit', 'pdf')
 
@@ -57,9 +57,12 @@ def etl():
         pdf_document.save(pdf_unlocked_path)
 
         df_temp = struct_pdf(pdf_unlocked_path)
+        df_temp = df_temp.dropna()
         df_temp = add_metadata(df_temp, pdf_path, now, 'debit')
 
         df_raw = pd.concat([df_raw, df_temp])
+
+    df_raw = df_raw.drop_duplicates()
 
     print(df_raw.columns)
 
@@ -69,7 +72,6 @@ def etl():
         -- DROP TABLE raw.c6_debit;
         CREATE TABLE IF NOT EXISTS raw.c6_debit (
             id TEXT PRIMARY KEY,
-            id_classification TEXT,
             "DATA" TEXT,
             "DESCRIÇÃO" TEXT,
             "DOC" TEXT,
@@ -92,4 +94,4 @@ def etl():
 
 
 if __name__ == "__main__":
-    etl()
+    load_debit_to_raw()

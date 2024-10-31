@@ -5,7 +5,7 @@ from datetime import datetime
 import pandas as pd
 
 
-def etl():
+def load_credit_to_raw():
     print("Iniciando o job to raw")
     file_manager = FileManager(ROOT, 'credit', 'csv')
 
@@ -19,7 +19,7 @@ def etl():
     for path in paths_to_read:
         df_temp = pd.read_csv(path, header=0, sep=';', dtype='str')
         print(f'+{len(df_temp)} linhas no df final')
-        df_temp = add_metadata(df_temp, path, now)
+        df_temp = add_metadata(df_temp, path, now, 'credit')
 
         df_raw = pd.concat([df_raw, df_temp])
 
@@ -29,8 +29,6 @@ def etl():
         -- DROP TABLE raw.c6_credit;
         CREATE TABLE IF NOT EXISTS raw.c6_credit (
             id TEXT PRIMARY KEY,
-            id_parcel TEXT,
-            id_classification TEXT,
             "Data de Compra" TEXT,
             "Nome no Cartão" TEXT,
             "Final do Cartão" TEXT,
@@ -56,4 +54,4 @@ def etl():
 
 
 if __name__ == "__main__":
-    etl()
+    load_credit_to_raw()

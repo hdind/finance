@@ -18,7 +18,7 @@ ENV = "prd" if branch == "main" else "dev"
 # PostreSQL connection
 PSQL_CONN = {
     "psql_db": "finance" if ENV == "prd" else "finance_dev",
-    "psql_username": "prd_user" if ENV == "prd" else "dev_user",
+    "psql_username": "postgres", # "prd_user" if ENV == "prd" else "dev_user",
     "psql_password": os.getenv("PSQL_PASSWORD")
 }
 
